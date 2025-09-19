@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -34,7 +33,6 @@
 <body class="flex items-center justify-center min-h-screen">
     <div id="app-container" class="w-full max-w-2xl bg-white p-6 md:p-10 rounded-xl shadow-2xl transition-all duration-300">
         
-        <!-- Modal -->
         <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"></div>
         <div id="custom-modal" class="fixed inset-0 flex items-center justify-center z-50 p-4 hidden">
             <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl transform transition-transform duration-300">
@@ -47,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Login Section -->
         <div id="login-section" class="flex flex-col items-center p-8">
             <img src="favicon.png" alt="Indiego.Net Logo" class="w-24 h-24 mb-4">
             <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">Indiego.Net Management</h1>
@@ -60,7 +57,6 @@
             </div>
         </div>
 
-        <!-- Main App Section -->
         <div id="main-app" class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
@@ -77,7 +73,6 @@
                 <button id="nav-laporan" class="nav-btn bg-red-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition transform hover:scale-105">Laporan</button>
             </div>
 
-            <!-- Content Sections -->
             <div id="content-pelanggan" class="content-section hidden">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Data Pelanggan</h2>
                 <div class="flex space-x-4 mb-4">
@@ -150,8 +145,7 @@
                                 </tr>
                             </thead>
                             <tbody id="riwayat-voucher-body" class="text-gray-600 text-sm font-light">
-                                <!-- Data will be populated here -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
@@ -242,8 +236,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="laporan-body" class="text-gray-600 text-sm font-light">
-                                    <!-- Data akan diisi di sini -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                         <div class="mt-4 text-right">
@@ -408,7 +401,7 @@
 
         elements.registerBtn.addEventListener('click', () => {
             const username = elements.usernameInput.value;
-            const password = elements.passwordInput.value;
+            const password = elements.password.value;
             if (username && password) {
                 if (users[username]) {
                     Swal.fire('Error', 'Username sudah terdaftar!', 'error');
@@ -446,34 +439,10 @@
             }
         };
 
-        // Data Pelanggan
-        let pelanggan = JSON.parse(localStorage.getItem('pelanggan')) || [];
-        let jenisPelangganSaatIni = 'bulanan';
+        // --- Integrasi Google Sheets API ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxdCVd0ts5GG260ReJ-HtCeSOTsD6zNN9mRDKZvo5JzrIV1HthNJuwdp_Wv_eaZy_d_hQ/exec';
 
-        const savePelanggan = () => {
-            localStorage.setItem('pelanggan', JSON.stringify(pelanggan));
-        };
-
-        elements.btnTipeBulanan.addEventListener('click', () => {
-            jenisPelangganSaatIni = 'bulanan';
-            elements.infoTagihanBulanan.classList.remove('hidden');
-            elements.infoTagihanToko.classList.add('hidden');
-            elements.btnTipeBulanan.classList.add('bg-red-600', 'text-white');
-            elements.btnTipeBulanan.classList.remove('bg-gray-300', 'text-gray-700');
-            elements.btnTipeToko.classList.add('bg-gray-300', 'text-gray-700');
-            elements.btnTipeToko.classList.remove('bg-red-600', 'text-white');
-        });
-
-        elements.btnTipeToko.addEventListener('click', () => {
-            jenisPelangganSaatIni = 'toko';
-            elements.infoTagihanBulanan.classList.add('hidden');
-            elements.infoTagihanToko.classList.remove('hidden');
-            elements.btnTipeToko.classList.add('bg-red-600', 'text-white');
-            elements.btnTipeToko.classList.remove('bg-gray-300', 'text-gray-700');
-            elements.btnTipeBulanan.classList.add('bg-gray-300', 'text-gray-700');
-            elements.btnTipeBulanan.classList.remove('bg-red-600', 'text-white');
-        });
-
+        // Fungsi untuk mengirim data pelanggan ke Google Sheets
         elements.formPelanggan.addEventListener('submit', async (e) => {
             e.preventDefault();
             const nama = document.getElementById('nama-pelanggan').value;
@@ -488,21 +457,50 @@
                 tagihanInfo.persen = document.getElementById('persentase-toko').value;
             }
 
-            const newPelanggan = {
-                id: Date.now(),
+            const dataPelanggan = {
+                nama_pelanggan: nama, // Sesuaikan dengan header di Google Sheets
+                alamat: alamat,
+                nomor_telepon: hp,
                 jenis: jenisPelangganSaatIni,
-                nama,
-                alamat,
-                hp,
-                lokasi,
+                lokasi: lokasi,
                 ...tagihanInfo
             };
 
-            pelanggan.push(newPelanggan);
-            savePelanggan();
-            Swal.fire('Sukses', 'Data pelanggan berhasil disimpan!', 'success');
-            elements.formPelanggan.reset();
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(dataPelanggan),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    Swal.fire('Sukses', 'Data pelanggan berhasil disimpan ke Google Sheets!', 'success');
+                    elements.formPelanggan.reset();
+                    ambilPelanggan(); // Ambil data terbaru dari Sheets
+                } else {
+                    Swal.fire('Error', 'Gagal menyimpan data ke Google Sheets!', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Terjadi kesalahan koneksi!', 'error');
+            }
         });
+
+        // Fungsi untuk mengambil data pelanggan dari Google Sheets
+        let pelanggan = []; // Ganti localStorage dengan array lokal untuk menyimpan data yang diambil dari Sheets
+        async function ambilPelanggan() {
+            try {
+                const response = await fetch(API_URL, { method: 'GET' });
+                const data = await response.json();
+                pelanggan = data; // Simpan data yang diambil dari Sheets ke variabel pelanggan
+                console.log('Data dari Google Sheets:', pelanggan);
+                // Perbarui tampilan UI jika diperlukan
+            } catch (error) {
+                console.error('Gagal mengambil data dari Google Sheets:', error);
+                Swal.fire('Error', 'Gagal mengambil data pelanggan.', 'error');
+            }
+        }
+        
+        // --- Akhir Integrasi Google Sheets API ---
 
         // Input Pengiriman Voucher
         let pengirimanVoucher = JSON.parse(localStorage.getItem('pengirimanVoucher')) || [];
@@ -913,8 +911,9 @@
         }
         
         checkAuth();
+        // Panggil fungsi untuk memuat data dari Sheets saat aplikasi dimulai
+        ambilPelanggan();
 
     </script>
 </body>
 </html>
-
