@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -33,6 +34,7 @@
 <body class="flex items-center justify-center min-h-screen">
     <div id="app-container" class="w-full max-w-2xl bg-white p-6 md:p-10 rounded-xl shadow-2xl transition-all duration-300">
         
+        <!-- Modal -->
         <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"></div>
         <div id="custom-modal" class="fixed inset-0 flex items-center justify-center z-50 p-4 hidden">
             <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl transform transition-transform duration-300">
@@ -45,6 +47,7 @@
             </div>
         </div>
 
+        <!-- Login Section -->
         <div id="login-section" class="flex flex-col items-center p-8">
             <img src="favicon.png" alt="Indiego.Net Logo" class="w-24 h-24 mb-4">
             <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">Indiego.Net Management</h1>
@@ -57,6 +60,7 @@
             </div>
         </div>
 
+        <!-- Main App Section -->
         <div id="main-app" class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
@@ -73,6 +77,7 @@
                 <button id="nav-laporan" class="nav-btn bg-red-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition transform hover:scale-105">Laporan</button>
             </div>
 
+            <!-- Content Sections -->
             <div id="content-pelanggan" class="content-section hidden">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Data Pelanggan</h2>
                 <div class="flex space-x-4 mb-4">
@@ -145,7 +150,8 @@
                                 </tr>
                             </thead>
                             <tbody id="riwayat-voucher-body" class="text-gray-600 text-sm font-light">
-                                </tbody>
+                                <!-- Data will be populated here -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -236,7 +242,8 @@
                                     </tr>
                                 </thead>
                                 <tbody id="laporan-body" class="text-gray-600 text-sm font-light">
-                                    </tbody>
+                                    <!-- Data akan diisi di sini -->
+                                </tbody>
                             </table>
                         </div>
                         <div class="mt-4 text-right">
@@ -466,48 +473,35 @@
             elements.btnTipeBulanan.classList.add('bg-gray-300', 'text-gray-700');
             elements.btnTipeBulanan.classList.remove('bg-red-600', 'text-white');
         });
-        
+
         elements.formPelanggan.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzRLFqP8XymERZkhHichBCw2w-m_vu2kOhecy5cvF0qIARQxlPq9-ap5zClXNotlx39Rg/exec';
-
             const nama = document.getElementById('nama-pelanggan').value;
             const alamat = document.getElementById('alamat-pelanggan').value;
             const hp = document.getElementById('hp-pelanggan').value;
             const lokasi = document.getElementById('lokasi-pelanggan').value;
-            const jenisPelanggan = jenisPelangganSaatIni;
             
-            const formData = new FormData();
-            formData.append('nama_pelanggan', nama);
-            formData.append('alamat', alamat);
-            formData.append('nomor_telepon', hp);
-            formData.append('lokasi', lokasi);
-            formData.append('jenis', jenisPelanggan);
-            
-            if (jenisPelanggan === 'bulanan') {
-                const total = document.getElementById('tagihan-bulanan').value;
-                formData.append('total_tagihan', total);
+            let tagihanInfo = {};
+            if (jenisPelangganSaatIni === 'bulanan') {
+                tagihanInfo.total = document.getElementById('tagihan-bulanan').value;
             } else {
-                const persen = document.getElementById('persentase-toko').value;
-                formData.append('persentase_toko', persen);
+                tagihanInfo.persen = document.getElementById('persentase-toko').value;
             }
-            
-            try {
-                const response = await fetch(scriptURL, {
-                    method: 'POST',
-                    body: formData,
-                    redirect: 'follow',
-                    mode: 'no-cors'
-                });
-                
-                Swal.fire('Sukses', 'Data pelanggan berhasil disimpan ke Google Sheets!', 'success');
-                elements.formPelanggan.reset();
 
-            } catch (error) {
-                console.error('Error!', error.message);
-                Swal.fire('Error', 'Gagal mengirim data. Coba lagi nanti.', 'error');
-            }
+            const newPelanggan = {
+                id: Date.now(),
+                jenis: jenisPelangganSaatIni,
+                nama,
+                alamat,
+                hp,
+                lokasi,
+                ...tagihanInfo
+            };
+
+            pelanggan.push(newPelanggan);
+            savePelanggan();
+            Swal.fire('Sukses', 'Data pelanggan berhasil disimpan!', 'success');
+            elements.formPelanggan.reset();
         });
 
         // Input Pengiriman Voucher
