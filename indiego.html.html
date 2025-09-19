@@ -401,7 +401,7 @@
 
         elements.registerBtn.addEventListener('click', () => {
             const username = elements.usernameInput.value;
-            const password = elements.password.value;
+            const password = elements.passwordInput.value;
             if (username && password) {
                 if (users[username]) {
                     Swal.fire('Error', 'Username sudah terdaftar!', 'error');
@@ -439,68 +439,76 @@
             }
         };
 
-        // --- Integrasi Google Sheets API ---
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxdCVd0ts5GG260ReJ-HtCeSOTsD6zNN9mRDKZvo5JzrIV1HthNJuwdp_Wv_eaZy_d_hQ/exec';
+        // Data Pelanggan
+        let pelanggan = JSON.parse(localStorage.getItem('pelanggan')) || [];
+        let jenisPelangganSaatIni = 'bulanan';
 
-        // Fungsi untuk mengirim data pelanggan ke Google Sheets
+        const savePelanggan = () => {
+            localStorage.setItem('pelanggan', JSON.stringify(pelanggan));
+        };
+
+        elements.btnTipeBulanan.addEventListener('click', () => {
+            jenisPelangganSaatIni = 'bulanan';
+            elements.infoTagihanBulanan.classList.remove('hidden');
+            elements.infoTagihanToko.classList.add('hidden');
+            elements.btnTipeBulanan.classList.add('bg-red-600', 'text-white');
+            elements.btnTipeBulanan.classList.remove('bg-gray-300', 'text-gray-700');
+            elements.btnTipeToko.classList.add('bg-gray-300', 'text-gray-700');
+            elements.btnTipeToko.classList.remove('bg-red-600', 'text-white');
+        });
+
+        elements.btnTipeToko.addEventListener('click', () => {
+            jenisPelangganSaatIni = 'toko';
+            elements.infoTagihanBulanan.classList.add('hidden');
+            elements.infoTagihanToko.classList.remove('hidden');
+            elements.btnTipeToko.classList.add('bg-red-600', 'text-white');
+            elements.btnTipeToko.classList.remove('bg-gray-300', 'text-gray-700');
+            elements.btnTipeBulanan.classList.add('bg-gray-300', 'text-gray-700');
+            elements.btnTipeBulanan.classList.remove('bg-red-600', 'text-white');
+        });
+        
         elements.formPelanggan.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbx3JkbTJVvJf8k2SZFE_dZ5ivSBAbAVSK4R6YtHfIIHXekAgB_lCTTbRn_gJ2bMEJiH-Q/exec';
+
             const nama = document.getElementById('nama-pelanggan').value;
             const alamat = document.getElementById('alamat-pelanggan').value;
             const hp = document.getElementById('hp-pelanggan').value;
             const lokasi = document.getElementById('lokasi-pelanggan').value;
+            const jenisPelanggan = jenisPelangganSaatIni;
             
-            let tagihanInfo = {};
-            if (jenisPelangganSaatIni === 'bulanan') {
-                tagihanInfo.total = document.getElementById('tagihan-bulanan').value;
+            const formData = new FormData();
+            formData.append('nama_pelanggan', nama);
+            formData.append('alamat', alamat);
+            formData.append('nomor_telepon', hp);
+            formData.append('lokasi', lokasi);
+            formData.append('jenis', jenisPelanggan);
+            
+            if (jenisPelanggan === 'bulanan') {
+                const total = document.getElementById('tagihan-bulanan').value;
+                formData.append('total_tagihan', total);
             } else {
-                tagihanInfo.persen = document.getElementById('persentase-toko').value;
+                const persen = document.getElementById('persentase-toko').value;
+                formData.append('persentase_toko', persen);
             }
-
-            const dataPelanggan = {
-                nama_pelanggan: nama, // Sesuaikan dengan header di Google Sheets
-                alamat: alamat,
-                nomor_telepon: hp,
-                jenis: jenisPelangganSaatIni,
-                lokasi: lokasi,
-                ...tagihanInfo
-            };
-
+            
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(scriptURL, {
                     method: 'POST',
-                    body: JSON.stringify(dataPelanggan),
-                    headers: { 'Content-Type': 'application/json' }
+                    body: formData,
+                    redirect: 'follow',
+                    mode: 'no-cors'
                 });
                 
-                if (response.ok) {
-                    Swal.fire('Sukses', 'Data pelanggan berhasil disimpan ke Google Sheets!', 'success');
-                    elements.formPelanggan.reset();
-                    ambilPelanggan(); // Ambil data terbaru dari Sheets
-                } else {
-                    Swal.fire('Error', 'Gagal menyimpan data ke Google Sheets!', 'error');
-                }
+                Swal.fire('Sukses', 'Data pelanggan berhasil disimpan ke Google Sheets!', 'success');
+                elements.formPelanggan.reset();
+
             } catch (error) {
-                Swal.fire('Error', 'Terjadi kesalahan koneksi!', 'error');
+                console.error('Error!', error.message);
+                Swal.fire('Error', 'Gagal mengirim data. Coba lagi nanti.', 'error');
             }
         });
-
-        // Fungsi untuk mengambil data pelanggan dari Google Sheets
-        let pelanggan = []; // Ganti localStorage dengan array lokal untuk menyimpan data yang diambil dari Sheets
-        async function ambilPelanggan() {
-            try {
-                const response = await fetch(API_URL, { method: 'GET' });
-                const data = await response.json();
-                pelanggan = data; // Simpan data yang diambil dari Sheets ke variabel pelanggan
-                console.log('Data dari Google Sheets:', pelanggan);
-                // Perbarui tampilan UI jika diperlukan
-            } catch (error) {
-                console.error('Gagal mengambil data dari Google Sheets:', error);
-                Swal.fire('Error', 'Gagal mengambil data pelanggan.', 'error');
-            }
-        }
-        
-        // --- Akhir Integrasi Google Sheets API ---
 
         // Input Pengiriman Voucher
         let pengirimanVoucher = JSON.parse(localStorage.getItem('pengirimanVoucher')) || [];
@@ -911,8 +919,6 @@
         }
         
         checkAuth();
-        // Panggil fungsi untuk memuat data dari Sheets saat aplikasi dimulai
-        ambilPelanggan();
 
     </script>
 </body>
