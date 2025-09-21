@@ -1511,7 +1511,222 @@
         
         console.log('Aplikasi siap. Gunakan username: admin, password: admin123 untuk login.');
     });
+<script>
+    // ==================== KONEKSI MONGODB ====================
+    const MONGODB_URI = "mongodb+srv://indiegonet_db_user:<db_password>@cluster0.8jfzl5g.mongodb.net/indiegoDB?retryWrites=true&w=majority&appName=Cluster0";
+    const API_BASE_URL = 'https://indiego-backend.herokuapp.com'; // Ganti dengan URL backend Anda
 
+    // Fungsi untuk request ke API
+    async function apiRequest(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('API request error:', error);
+            // Fallback ke localStorage jika API tidak tersedia
+            throw error;
+        }
+    }
+
+    // Modifikasi fungsi doLogin untuk menggunakan backend
+    async function doLogin() {
+        const u = document.getElementById('login-username').value;
+        const p = document.getElementById('login-password').value;
+        
+        try {
+            const result = await apiRequest('/api/login', {
+                method: 'POST',
+                body: JSON.stringify({ username: u, password: p })
+            });
+            
+            if (result.success) {
+                currentUser = result.user;
+                document.getElementById('page-login').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'block';
+                
+                // Update UI berdasarkan role
+                updateUIForRole(currentUser.role);
+                initDefaults();
+                
+                // Tampilkan notifikasi sukses
+                alert('Login berhasil! Selamat datang ' + currentUser.name);
+                
+                // Load data dari backend setelah login berhasil
+                await loadDataFromBackend();
+            } else {
+                alert('Login gagal. ' + result.message);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            // Fallback ke login lokal jika backend tidak tersedia
+            const user = users.find(user => user.username === u && user.password === p);
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('page-login').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'block';
+                
+                // Update UI berdasarkan role
+                updateUIForRole(user.role);
+                initDefaults();
+                
+                // Tampilkan notifikasi sukses
+                alert('Login berhasil! (Mode offline) Selamat datang ' + user.name);
+            } else {
+                alert('Login gagal. Periksa username dan password');
+            }
+        }
+    }
+
+    // Fungsi untuk memuat data dari backend
+    async function loadDataFromBackend() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        
+        try {
+            const [customersData, usersData, deliveriesData, billingsData, messagesData] = await Promise.all([
+                apiRequest('/api/customers'),
+                apiRequest('/api/users'),
+                apiRequest('/api/deliveries'),
+                apiRequest('/api/billings'),
+                apiRequest('/api/messages')
+            ]);
+            
+            // Update data lokal dengan data dari backend
+            if (customersData) customers = customersData;
+            if (usersData) users = usersData;
+            if (deliveriesData) deliveries = deliveriesData;
+            if (billingsData) billings = billingsData;
+            if (messagesData) userMessages = messagesData;
+            
+            console.log('Data loaded from backend');
+            saveDataToLocalStorage(); // Simpan ke localStorage sebagai cache
+        } catch (error) {
+            console.log('Failed to load from backend, using localStorage data');
+            // Gunakan data dari localStorage jika backend tidak tersedia
+        }
+    }
+
+    // Fungsi untuk menyimpan data ke backend
+    async function saveDataToBackend() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        
+        try {
+            await Promise.all([
+                apiRequest('/api/customers', {
+                    method: 'POST',
+                    body: JSON.stringify({ data: customers })
+                }),
+                apiRequest('/api/users', {
+                    method: 'POST',
+                    body: JSON.stringify({ data: users })
+                }),
+                apiRequest('/api/deliveries', {
+                    method: 'POST',
+                    body: JSON.stringify({ data: deliveries })
+                }),
+                apiRequest('/api/billings', {
+                    method: 'POST',
+                    body: JSON.stringify({ data: billings })
+                }),
+                apiRequest('/api/messages', {
+                    method: 'POST',
+                    body: JSON.stringify({ data: userMessages })
+                })
+            ]);
+            
+            console.log('Data saved to backend');
+        } catch (error) {
+            console.error('Error saving data to backend:', error);
+            // Data akan tetap tersimpan di localStorage
+        }
+    }
+
+    // Modifikasi fungsi saveDataToLocalStorage untuk juga menyimpan ke backend
+    const originalSaveDataToLocalStorage = saveDataToLocalStorage;
+    saveDataToLocalStorage = function() {
+        // Simpan ke localStorage (seperti biasa)
+        originalSaveDataToLocalStorage();
+        
+        // Juga simpan ke backend jika user adalah admin
+        if (currentUser && currentUser.role === 'admin') {
+            saveDataToBackend();
+        }
+    };
+
+    // Modifikasi fungsi untuk operasi data agar sync dengan backend
+    function wrapDataOperation(originalFunction) {
+        return function(...args) {
+            const result = originalFunction.apply(this, args);
+            saveDataToLocalStorage(); // Ini akan trigger save ke backend juga
+            return result;
+        };
+    }
+
+    // Wrap fungsi-fungsi yang mengubah data
+    addOrUpdateUser = wrapDataOperation(addOrUpdateUser);
+    addOrUpdateCustomer = wrapDataOperation(addOrUpdateCustomer);
+    addDelivery = wrapDataOperation(addDelivery);
+    saveBillingToko = wrapDataOperation(saveBillingToko);
+    saveBillingPribadi = wrapDataOperation(saveBillingPribadi);
+    updateBanner = wrapDataOperation(updateBanner);
+    sendUserMessage = wrapDataOperation(sendUserMessage);
+    markMessageAsRead = wrapDataOperation(markMessageAsRead);
+    deleteMessage = wrapDataOperation(deleteMessage);
+    clearAllDeliveries = wrapDataOperation(clearAllDeliveries);
+
+    // Load data dari backend saat aplikasi dimulai (jika sudah login)
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load data dari localStorage pertama
+        loadDataFromLocalStorage();
+        
+        // Set default dates
+        const today = new Date().toISOString().slice(0, 10);
+        if (document.getElementById('peng-tgl')) {
+            document.getElementById('peng-tgl').value = today;
+        }
+        
+        // Coba load data dari backend jika sudah login sebelumnya
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('logout-button').style.display = 'block';
+            updateUIForRole(currentUser.role);
+            initDefaults();
+            
+            // Load data dari backend
+            await loadDataFromBackend();
+        }
+        
+        // Focus pada input username
+        if (document.getElementById('login-username')) {
+            document.getElementById('login-username').focus();
+        }
+        
+        console.log('Aplikasi siap. Gunakan username: admin, password: admin123 untuk login.');
+    });
+
+    // Modifikasi fungsi logout untuk clear localStorage juga
+    const originalLogout = logout;
+    logout = function() {
+        localStorage.removeItem('currentUser');
+        originalLogout();
+    };
+</script>
 </script>
 </body>
 </html>
