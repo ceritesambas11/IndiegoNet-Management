@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // Koneksi ke MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://indiegonet_db_user:<db_password>@cluster0.8jfzl5g.mongodb.net/indiegoDB?retryWrites=true&w=majority&appName=Cluster0";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://indiegonet_db_user:T@myf1q1h@cluster0.8jfzl5g.mongodb.net/indiegoDB?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -187,4 +187,5 @@ app.get('/health', (req, res) => {
 // Jalankan server
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
+
 });
