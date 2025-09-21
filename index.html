@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indiego.Net Management — Final Fix</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #121212;
+            --card: #1f1f1f;
+            --muted: #9e9e9e;
+            --accent: #ff4d4d;
+            --accent-light: #ff7777;
+            --ok: #4caf50;
+            --ok-light: #66bb6a;
+            --border: #333;
+            --text: #e0e0e0;
+            --user-role: #4a90e2;
+            --admin-role: #ff4d4d;
+            --warning: #ff9800;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            padding-bottom: 70px; /* Space for bottom nav */
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--accent);
+        }
+
+        main {
+            padding: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        input,
+        select,
+        button,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #2b2b2b;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        input:focus,
+        select:focus,
+        button:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.3);
+        }
+        
+        button {
+            cursor: pointer;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            padding: 12px;
+        }
+        
+        button.secondary {
+            background: #3a3a3a;
+            color: var(--text);
+        }
+        
+        button:hover {
+            filter: brightness(1.2);
+        }
+
+        button.secondary:hover {
+            background: #4a4a4a;
+        }
+        
+        label {
+            display: block;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+        
+        thead th {
+            background: #2b2b2b;
+            color: var(--muted);
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #222;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .row label {
+            margin-top: 0;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* Role badges */
+        .role-badge {
+            padding: 4px 8px;
+            borderRadius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .role-admin {
+            background: var(--admin-role);
+            color: white;
+        }
+        
+        .role-user {
+            background: var(--user-role);
+            color: white;
+        }
+
+        /* User dashboard */
+        .user-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .user-summary-item {
+            background: #2b2b2b;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .user-summary-item h3 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--accent);
+        }
+        
+        .user-summary-item p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* Mobile-specific styles */
+        .mobile-nav {
+            display: flex;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        
+        .mobile-nav button {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            transition: color 0.2s ease;
+        }
+
+        .mobile-nav button:hover,
+        .mobile-nav button.active {
+            color: var(--accent);
+        }
+        
+        .mobile-nav button.active {
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        #page-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #page-login .card {
+            max-width: 400px;
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
+        #page-login h2 {
+            font-size: 48px;
+        }
+        
+        .info-text {
+            background: #2b2b2b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #2b2b2b;
+            margin-bottom: 12px;
+        }
+        
+        .card-header .muted {
+            font-size: 14px;
+        }
+
+        /* Responsive adjustments */
+        @media(min-width: 880px) {
+            .grid-2 {
+                grid-template-columns: 1fr 380px;
+            }
+            .mobile-nav {
+                display: none;
+            }
+            .desktop-nav {
+                display: flex !important;
+            }
+            body {
+                padding-bottom: 0;
+            }
+            main {
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+            header {
+                padding: 16px;
+                justify-content: space-between;
+            }
+            .card-header .muted {
+                display: none;
+            }
+            .user-summary {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+            }
+        }
+
+        .desktop-nav {
+            display: none;
+        }
+
+        /* General purpose styles */
+        .flex-gap-8 {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Logo styles */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: url('indiegonet_logo.png') center/contain no-repeat;
+            border-radius: 8px;
+        }
+        
+        .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .status-tags {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .status-tag {
+            background: linear-gradient(to right, #27ae60, #219653);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-tag.ptp {
+            background: linear-gradient(to right, #e67e22, #d35400);
+        }
+        
+        /* Banner styles */
+        .banner-container {
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 150px;
+            position: relative;
+        }
+        
+        .banner-slide {
+            display: none;
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+        
+        .banner-slide.active {
+            display: block;
+        }
+        
+        /* Message styles */
+        .message-container {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .message {
+            background: #2b2b2b;
+            padding: 12px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .message-sender {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .message-date {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        
+        /* Admin dashboard styles */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .stat-card {
+            background: #2b2b2b;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--accent);
+        }
+        
+        .stat-card p {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        
+        .trend-up {
+            color: var(--ok);
+        }
+        
+        .trend-down {
+            color: var(--accent);
+        }
+        
+        /* Profile edit form */
+        .profile-form {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        /* Logout button */
+        .logout-btn {
+            background: var(--warning);
+            margin-left: 10px;
+        }
+
+        /* Login page logo */
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .login-logo img {
+            width: 80px;
+            height: 80px;
+        }
+
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo-container">
+        <div class="logo"></div>
+        <div class="logo-text">indiegonet</div>
+    </div>
+    <div class="status-tags">
+        <div class="status-tag">Fiber On</div>
+        <div class="status-tag ptp">PTP On</div>
+        <button class="logout-btn" onclick="logout()" id="logout-button" style="display:none">Logout</button>
+    </div>
+</header>
+<main>
+
+<div id="page-login">
+    <div class="login-logo">
+        <img src="indiegonet_logo.png" alt="IndiegoNet Logo">
+    </div>
+    <div class="card">
+        <h2 style="margin:0 0 6px">🛜</h2>
+        <h3 style="margin-top:0">Selamat Bergabung Menjadi Keluarga Indiego Art</h3>
+        <label>Username<input id="login-username" type="text" placeholder="Masukkan username"></label>
+        <label>Password<input id="login-password" type="password" placeholder="Masukkan password"></label>
+        <div style="margin-top:16px">
+            <button onclick="doLogin()">📥 Masuk</button>
+        </div>
+        <div class="info-text">
+            <p class="muted" style="margin:0">Gunakan username dan password yang diberikan admin</p>
+        </div>
+    </div>
+</div>
+
+<div id="app" style="display:none">
+
+    <div class="card" style="display:flex;flex-direction:column;gap:8px">
+        <div class="row" style="justify-content:space-between">
+            <strong>👋 Halo, <span id="user-name">User</span> <span id="user-role-badge" class="role-badge">Role</span></strong>
+            <div class="muted">Sekarang Dunia Dalam Genggaman Anda</div>
+        </div>
+        <div id="profile-edit-section" style="display:none; margin-top: 12px;">
+            <h3 style="margin:0 0 8px">Edit Profil</h3>
+            <label>Username Baru<input id="edit-username" type="text"></label>
+            <label>Password Baru<input id="edit-password" type="password"></label>
+            <div style="margin-top:16px;">
+                <button onclick="updateProfile()">Simpan Perubahan</button>
+            </div>
+        </div>
+        <button id="toggle-profile-edit" class="secondary" onclick="toggleProfileEdit()" style="margin-top: 8px;">Edit Profil</button>
+    </div>
+
+    <section id="section-user-dashboard" class="card">
+        <h2 style="margin:0 0 8px">Dashboard Saya</h2>
+        <p class="muted">Ringkasan vocer dan tagihan</p>
+        
+        <div id="user-banner" class="banner-container">
+            <img class="banner-slide active" src="banner1.jpg" alt="Banner 1">
+            <img class="banner-slide" src="banner2.jpg" alt="Banner 2">
+            <img class="banner-slide" src="banner3.jpg" alt="Banner 3">
+        </div>
+        
+        <div class="user-summary">
+            <div class="user-summary-item">
+                <h3 id="user-v2-total">0</h3>
+                <p>Vocer 2.000</p>
+            </div>
+            <div class="user-summary-item">
+                <h3 id="user-v5-total">0</h3>
+                <p>Vocer 5.000</p>
+            </div>
+            <div class="user-summary-item">
+                <h3 id="user-v2-sold">0</h3>
+                <p>V2 Terjual</p>
+            </div>
+            <div class="user-summary-item">
+                <h3 id="user-v5-sold">0</h3>
+                <p>V5 Terjual</p>
+            </div>
+        </div>
+        
+        <div id="pribadi-summary" style="display:none">
+            <div class="user-summary">
+                <div class="user-summary-item">
+                    <h3 id="pribadi-tagihan">0</h3>
+                    <p>Total Tagihan</p>
+                </div>
+            </div>
+        </div>
+        
+        <label>Riwayat Pengiriman Vocer</label>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Tanggal</th><th>Vocer 2.000</th><th>Vocer 5.000</th><th>Status</th></tr></thead>
+                <tbody id="tbl-user-deliveries"></tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 24px;">
+            <h3 style="margin:0 0 8px">Kirim Pesan</h3>
+            <p class="muted">Kritik, saran, atau laporkan gangguan</p>
+            <textarea id="user-message" rows="4" placeholder="Tulis pesan Anda di sini..."></textarea>
+            <div style="margin-top:16px;">
+                <button onclick="sendUserMessage()">Kirim Pesan</button>
+            </div>
+        </div>
+        
+        <div id="user-message-history" class="message-container" style="margin-top: 24px; display: none;">
+            <h3 style="margin:0 0 8px">Pesan Terkirim</h3>
+            <div id="user-messages-list"></div>
+        </div>
+    </section>
+
+    <section id="section-admin-dashboard" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Dashboard Admin</h2>
+        <p class="muted">Ringkasan keseluruhan sistem</p>
+        
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3 id="total-sales">0</h3>
+                <p>Total Penjualan Bulan Ini</p>
+                <span id="sales-trend" class="muted">-</span>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-customers">0</h3>
+                <p>Total Pelanggan</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-messages">0</h3>
+                <p>Pesan Masuk</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="top-customer">-</h3>
+                <p>Pelanggan Terbaik</p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 24px;">
+            <h3 style="margin:0 0 8px">Kelola Banner</h3>
+            <label>Upload Banner Baru (URL Gambar JPG)<input id="banner-url" type="text" placeholder="https://example.com/banner.jpg"></label>
+            <div style="margin-top:16px;">
+                <button onclick="updateBanner()">Simpan Banner</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 24px;">
+            <h3 style="margin:0 0 8px">Performa Pelanggan</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Nama</th><th>Penjualan Bulan Ini</th><th>Bulan Lalu</th><th>Trend</th></tr></thead>
+                    <tbody id="tbl-customer-performance"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div style="margin-top: 24px;">
+            <h3 style="margin:0 0 8px">Pesan dari Pengguna</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Pengirim</th><th>Pesan</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+                    <tbody id="tbl-user-messages"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-pengguna" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Manajemen Pengguna</h2>
+        <div class="grid-2">
+            <div>
+                <label>Username<input id="user-username" type="text"></label>
+                <label>Password<input id="user-password" type="password"></label>
+                <label>Nama Lengkap
+                    <select id="user-name-input">
+                        <option value="">-- Pilih Pelanggan --</option>
+                    </select>
+                </label>
+                <label>Role
+                    <select id="user-role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </label>
+                <div style="margin-top:16px;">
+                    <button onclick="addOrUpdateUser()">Tambah / Simpan</button>
+                </div>
+            </div>
+
+            <div>
+                <label>Cari Pengguna<input id="user-search" type="text" placeholder="Cari username..." oninput="renderUsers()"></label>
+                <div class="table-wrap" style="max-height:320px;overflow:auto">
+                    <table>
+                        <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead>
+                        <tbody id="tbl-users"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-pelanggan" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Data Pelanggan</h2>
+        <div class="grid-2">
+            <div>
+                <label>Nama Pelanggan<input id="pel-nama" type="text"></label>
+                <label>Jenis
+                    <select id="pel-jenis">
+                        <option value="Toko">Toko</option>
+                        <option value="Pribadi">Pribadi</option>
+                    </select>
+                </label>
+
+                <div id="pel-toko-fields">
+                    <label>Persenan (%) untuk Toko<input id="pel-persen" type="number" min="0" max="100" value="20"></label>
+                </div>
+
+                <div id="pel-pribadi-fields" style="display:none">
+                    <label>Total Tagihan (Rp) untuk Pribadi<input id="pel-pribadi-tagihan" type="number" value="0"></label>
+                </div>
+
+                <div style="margin-top:16px;">
+                    <button onclick="addOrUpdateCustomer()">Tambah / Simpan</button>
+                </div>
+            </div>
+
+            <div>
+                <label>Cari Pelanggan<input id="pel-search" type="text" placeholder="Cari nama..." oninput="renderCustomers()"></label>
+                <div class="table-wrap" style="max-height:320px;overflow:auto">
+                    <table>
+                        <thead><tr><th>Nama</th><th>Jenis</th><th>Aksi</th></tr></thead>
+                        <tbody id="tbl-customers"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-pengiriman" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Pengiriman Vocer</h2>
+        <div class="grid-2">
+            <div>
+                <label>Pilih Pelanggan (Toko)<select id="drop-pengiri-nama"></select></label>
+                <label>Tanggal<input id="peng-tgl" type="date"></label>
+                <label>Vocer 2.000<input id="peng-v2" type="number" value="0"></label>
+                <label>Vocer 5.000<input id="peng-v5" type="number" value="0"></label>
+                <div style="margin-top:16px;">
+                    <button onclick="addDelivery()">Simpan</button>
+                </div>
+            </div>
+
+            <div>
+                <label>Daftar Pengiriman (terbaru di atas)</label>
+                <input id="search-deliveries" type="text" placeholder="Cari nama..." oninput="renderDeliveries()">
+                <div class="table-wrap" style="max-height:320px;overflow:auto">
+                    <table>
+                        <thead><tr><th>Tgl</th><th>Nama</th><th>V2</th><th>V5</th><th>Aksi</th></tr></thead>
+                        <tbody id="tbl-deliveries"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:16px">
+                    <button class="secondary" onclick="clearAllDeliveries()">Hapus Semua</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-penagihan" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Penagihan</h2>
+        <div class="grid-2">
+            <div>
+                <label>Jenis Penagihan
+                    <select id="select-jenis-penagihan" onchange="onBillingTypeChange()">
+                        <option value="">-- Pilih --</option>
+                        <option value="Toko">Toko</option>
+                        <option value="Pribadi">Pribadi</option>
+                    </select>
+                </label>
+
+                <div id="billing-toko" style="display:none" class="card">
+                    <label>Nama Toko<select id="billing-toko-nama" onchange="updateTokoPreview()"></select></label>
+                    <label>Rentang Tanggal</label>
+                    <div class="flex-gap-8">
+                        <input id="billing-dari" type="date" onchange="recalcToko()">
+                        <input id="billing-sampai" type="date" onchange="recalcToko()">
+                    </div>
+
+                    <div style="margin-top:12px">
+                        <label>Jumlah Vocer Terkirim (otomatis)</label>
+                        <div class="flex-gap-8">
+                            <input id="billing-terkirim-v2" type="number" readonly placeholder="V2">
+                            <input id="billing-terkirim-v5" type="number" readonly placeholder="V5">
+                        </div>
+
+                        <label style="margin-top:12px">Sisa Voucher</label>
+                        <div class="flex-gap-8">
+                            <input id="billing-sisa-v2" type="number" value="0" onchange="recalcToko()" placeholder="Sisa V2">
+                            <input id="billing-sisa-v5" type="number" value="0" onchange="recalcToko()" placeholder="Sisa V5">
+                        </div>
+
+                        <label style="margin-top:12px">Persenan</label>
+                        <input id="billing-persen" type="text" readonly>
+
+                        <div style="margin-top:16px;">
+                            <small class="muted">Hasil perhitungan</small>
+                            <div style="margin-top:8px">
+                                <div class="row">
+                                    <span style="width:160px">Vocer Terjual V2:</span>
+                                    <strong id="res-terjual-v2">0</strong>
+                                </div>
+                                <div class="row">
+                                    <span style="width:160px">Vocer Terjual V5:</span>
+                                    <strong id="res-terjual-v5">0</strong>
+                                </div>
+                                <div class="row">
+                                    <span style="width:160px">Total Penjualan:</span>
+                                    <strong id="res-total">0</strong>
+                                </div>
+                                <div class="row">
+                                    <span style="width:160px">Bagian Toko:</span>
+                                    <strong id="res-bagian">0</strong>
+                                </div>
+                                <div class="row">
+                                    <span style="width:160px">Total Tagihan:</span>
+                                    <strong id="res-tagihan">0</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+                            <button onclick="saveBillingToko()">Simpan & Hapus Pengiriman</button>
+                            <button class="secondary" onclick="exportTokoPDF()">Export PDF</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="billing-pribadi" style="display:none" class="card">
+                    <label>Nama Pelanggan Pribadi<select id="billing-pribadi-nama" onchange="updatePribadiPreview()"></select></label>
+                    <label>Tanggal Penagihan<input id="billing-pribadi-tgl" type="date"></label>
+                    <div style="margin-top:12px">
+                        <label>Total Tagihan (Rp)</label>
+                        <input id="billing-pribadi-total" type="text" readonly>
+                    </div>
+                    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+                        <button onclick="saveBillingPribadi()">Simpan</button>
+                        <button class="secondary" onclick="exportPribadiPDF()">Export PDF</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div>
+                <label>Preview Pengiriman</label>
+                <div class="table-wrap" style="max-height:340px;overflow:auto">
+                    <table>
+                        <thead><tr><th>Tgl</th><th>Nama</th><th>V2</th><th>V5</th></tr></thead>
+                        <tbody id="preview-deliveries"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:8px" class="muted">
+                    <small>Pengiriman akan dihapus setelah penagihan toko disimpan.</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-laporan" class="card" style="display:none">
+        <h2 style="margin:0 0 8px">Laporan</h2>
+        <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <div class="row">
+                <label>Dari<input id="report-dari" type="date"></label>
+                <label>Sampai<input id="report-sampai" type="date"></label>
+            </div>
+            <div class="row">
+                <button onclick="renderReport()">Tampilkan</button>
+                <button class="secondary" onclick="exportFilteredPDF()">Export PDF</button>
+                <button class="secondary" onclick="exportFilteredExcel()">Export Excel</button>
+            </div>
+        </div>
+
+        <div class="table-wrap" style="overflow:auto">
+            <table>
+                <thead><tr><th>No</th><th>Nama</th><th>Jenis</th><th>V2</th><th>V5</th><th>Total Tagihan</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+                <tbody id="tbl-report"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div id="nav-bottom" class="mobile-nav">
+    <button onclick="showSection('user-dashboard')" id="mobile-btn-dashboard">
+        <span>📊</span>
+        <span>Dashboard</span>
+    </button>
+    <button onclick="showSection('pelanggan')" id="mobile-btn-pelanggan">
+        <span>👥</span>
+        <span>Pelanggan</span>
+    </button>
+    <button onclick="showSection('pengiriman')" id="mobile-btn-pengiriman">
+        <span>📦</span>
+        <span>Pengiriman</span>
+    </button>
+    <button onclick="showSection('penagihan')" id="mobile-btn-penagihan">
+        <span>💰</span>
+        <span>Penagihan</span>
+    </button>
+    <button onclick="showSection('laporan')" id="mobile-btn-laporan">
+        <span>📋</span>
+        <span>Laporan</span>
+    </button>
+    <button onclick="showSection('pengguna')" id="mobile-btn-pengguna">
+        <span>👤</span>
+        <span>Pengguna</span>
+    </button>
+    <button onclick="showSection('admin-dashboard')" id="mobile-btn-admin-dashboard">
+        <span>🏠</span>
+        <span>Admin</span>
+    </button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    /* -------------------------
+       Data stores (in-memory)
+       ------------------------- */
+    let customers = [];
+    let deliveries = [];
+    let billings = [];
+    let users = [
+        { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+        { username: 'tokoA', password: 'toko123', role: 'user', name: 'Toko A' },
+        { username: 'tokoB', password: 'toko123', role: 'user', name: 'Toko B' },
+        { username: 'budi', password: 'budi123', role: 'user', name: 'Budi' }
+    ];
+    let currentUser = null;
+    let userMessages = [];
+    let banners = ['banner1.jpg', 'banner2.jpg', 'banner3.jpg'];
+    let currentBannerIndex = 0;
+
+    /* -------------------------
+       Local Storage Functions
+       ------------------------- */
+    function saveDataToLocalStorage() {
+        localStorage.setItem('indiego_customers', JSON.stringify(customers));
+        localStorage.setItem('indiego_deliveries', JSON.stringify(deliveries));
+        localStorage.setItem('indiego_billings', JSON.stringify(billings));
+        localStorage.setItem('indiego_users', JSON.stringify(users));
+        localStorage.setItem('indiego_messages', JSON.stringify(userMessages));
+        localStorage.setItem('indiego_banners', JSON.stringify(banners));
+        console.log('Data saved to localStorage');
+    }
+
+    function loadDataFromLocalStorage() {
+        const savedCustomers = localStorage.getItem('indiego_customers');
+        const savedDeliveries = localStorage.getItem('indiego_deliveries');
+        const savedBillings = localStorage.getItem('indiego_billings');
+        const savedUsers = localStorage.getItem('indiego_users');
+        const savedMessages = localStorage.getItem('indiego_messages');
+        const savedBanners = localStorage.getItem('indiego_banners');
+        
+        if (savedCustomers) customers = JSON.parse(savedCustomers);
+        if (savedDeliveries) deliveries = JSON.parse(savedDeliveries);
+        if (savedBillings) billings = JSON.parse(savedBillings);
+        if (savedMessages) userMessages = JSON.parse(savedMessages);
+        if (savedBanners) banners = JSON.parse(savedBanners);
+        
+        // Prioritaskan users dari localStorage, jika tidak ada gunakan default
+        if (savedUsers) {
+            users = JSON.parse(savedUsers);
+            // Pastikan admin selalu ada
+            if (!users.find(u => u.username === 'admin')) {
+                users.push({ username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' });
+            }
+        } else if (users.length === 0) {
+            users = [
+                { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+                { username: 'tokoA', password: 'toko123', role: 'user', name: 'Toko A' },
+                { username: 'tokoB', password: 'toko123', role: 'user', name: 'Toko B' },
+                { username: 'budi', password: 'budi123', role: 'user', name: 'Budi' }
+            ];
+        }
+        
+        console.log('Data loaded from localStorage');
+    }
+
+    /* -------------------------
+       Helpers
+       ------------------------- */
+    const today = () => new Date().toISOString().slice(0, 10);
+    const firstDayOfMonth = () => {
+        const d = new Date();
+        d.setDate(1);
+        return d.toISOString().slice(0, 10);
+    };
+    const firstDayOfLastMonth = () => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - 1);
+        d.setDate(1);
+        return d.toISOString().slice(0, 10);
+    };
+    const lastDayOfLastMonth = () => {
+        const d = new Date();
+        d.setDate(0);
+        return d.toISOString().slice(0, 10);
+    };
+    function fmt(n) { if (n === null || n === undefined) return '0'; return Number(n).toLocaleString('id-ID'); }
+
+    /* -------------------------
+       Banner Slideshow
+       ------------------------- */
+    function startBannerSlideshow() {
+        setInterval(() => {
+            const bannerSlides = document.querySelectorAll('.banner-slide');
+            bannerSlides.forEach(slide => slide.classList.remove('active'));
+            
+            currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+            bannerSlides[currentBannerIndex].classList.add('active');
+        }, 5000); // Ganti banner setiap 5 detik
+    }
+
+    /* -------------------------
+       Auth / navigation
+       ------------------------- */
+    function doLogin() {
+        const u = document.getElementById('login-username').value;
+        const p = document.getElementById('login-password').value;
+        
+        // Cari user yang sesuai
+        const user = users.find(user => user.username === u && user.password === p);
+        
+        if (user) {
+            currentUser = user;
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('logout-button').style.display = 'block';
+            
+            // Update UI berdasarkan role
+            updateUIForRole(user.role);
+            initDefaults();
+            
+            // Tampilkan notifikasi sukses
+            alert('Login berhasil! Selamat datang ' + user.name);
+        } else {
+            alert('Login gagal. Periksa username dan password');
+        }
+    }
+
+    function logout() {
+        if (confirm('Apakah Anda yakin ingin keluar?')) {
+            currentUser = null;
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('page-login').style.display = 'flex';
+            document.getElementById('logout-button').style.display = 'none';
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+    }
+
+    // Tambahkan event listener untuk form login
+    document.getElementById('login-username').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('login-password').focus();
+        }
+    });
+
+    document.getElementById('login-password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            doLogin();
+        }
+    });
+
+    function updateUIForRole(role) {
+        // Update user info
+        document.getElementById('user-name').textContent = currentUser.name;
+        const badge = document.getElementById('user-role-badge');
+        badge.textContent = role === 'admin' ? 'Admin' : 'User';
+        badge.className = `role-badge role-${role}`;
+        
+        // Show/hide features based on role
+        const adminSections = ['admin-dashboard', 'pelanggan', 'pengiriman', 'penagihan', 'laporan', 'pengguna'];
+        const userSections = ['user-dashboard'];
+        
+        if (role === 'admin') {
+            // Show all sections and buttons for admin
+            adminSections.forEach(section => {
+                document.getElementById(`section-${section}`).style.display = 'block';
+            });
+            userSections.forEach(section => {
+                document.getElementById(`section-${section}`).style.display = 'none';
+            });
+            
+            // Tampilkan semua menu untuk admin
+            document.querySelectorAll('.mobile-nav button').forEach(btn => {
+                btn.style.display = 'flex';
+            });
+            
+            showSection('admin-dashboard');
+            updateAdminDashboard();
+        } else {
+            // Hide admin sections and show only user dashboard for regular users
+            adminSections.forEach(section => {
+                document.getElementById(`section-${section}`).style.display = 'none';
+            });
+            userSections.forEach(section => {
+                document.getElementById(`section-${section}`).style.display = 'block';
+            });
+            
+            // Sembunyikan menu admin untuk user biasa
+            document.getElementById('mobile-btn-pengguna').style.display = 'none';
+            document.getElementById('mobile-btn-admin-dashboard').style.display = 'none';
+            document.getElementById('mobile-btn-pelanggan').style.display = 'none';
+            document.getElementById('mobile-btn-pengiriman').style.display = 'none';
+            document.getElementById('mobile-btn-penagihan').style.display = 'none';
+            document.getElementById('mobile-btn-laporan').style.display = 'none';
+            document.getElementById('mobile-btn-dashboard').style.display = 'flex';
+            
+            showSection('user-dashboard');
+            updateUserDashboard();
+        }
+    }
+
+    function showSection(key) {
+        const sections = ['user-dashboard', 'admin-dashboard', 'pengguna', 'pelanggan', 'pengiriman', 'penagihan', 'laporan'];
+        sections.forEach(id => {
+            document.getElementById(`section-${id}`).style.display = 'none';
+        });
+        
+        document.getElementById(`section-${key}`).style.display = 'block';
+
+        const navButtons = document.querySelectorAll('.mobile-nav button');
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        
+        const targetBtn = document.querySelector(`.mobile-nav button[onclick="showSection('${key}')"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+
+        if (key === 'pengguna') renderUsers();
+        if (key === 'pelanggan') renderCustomers();
+        if (key === 'pengiriman') renderDeliveries();
+        if (key === 'penagihan') onBillingTypeChange();
+        if (key === 'laporan') renderReport();
+        if (key === 'user-dashboard') updateUserDashboard();
+        if (key === 'admin-dashboard') updateAdminDashboard();
+    }
+    
+    /* -------------------------
+       Profile Management
+       ------------------------- */
+    function toggleProfileEdit() {
+        const editSection = document.getElementById('profile-edit-section');
+        const isVisible = editSection.style.display === 'block';
+        editSection.style.display = isVisible ? 'none' : 'block';
+        document.getElementById('toggle-profile-edit').textContent = isVisible ? 'Edit Profil' : 'Batal Edit';
+        
+        if (!isVisible) {
+            document.getElementById('edit-username').value = currentUser.username;
+            document.getElementById('edit-password').value = '';
+        }
+    }
+
+    function updateProfile() {
+        const newUsername = document.getElementById('edit-username').value.trim();
+        const newPassword = document.getElementById('edit-password').value;
+        
+        if (!newUsername) {
+            return alert('Username tidak boleh kosong!');
+        }
+        
+        // Check if username already exists (excluding current user)
+        const usernameExists = users.some(u => u.username === newUsername && u.username !== currentUser.username);
+        if (usernameExists) {
+            return alert('Username sudah digunakan!');
+        }
+        
+        // Update user data
+        const userIndex = users.findIndex(u => u.username === currentUser.username);
+        if (userIndex !== -1) {
+            users[userIndex].username = newUsername;
+            if (newPassword) {
+                users[userIndex].password = newPassword;
+            }
+            
+            // Update current user
+            currentUser = users[userIndex];
+            
+            saveDataToLocalStorage();
+            document.getElementById('user-name').textContent = currentUser.name;
+            toggleProfileEdit();
+            alert('Profil berhasil diperbarui!');
+        }
+    }
+    
+    /* -------------------------
+       User Dashboard
+       ------------------------- */
+    function updateUserDashboard() {
+        if (!currentUser || currentUser.role === 'admin') return;
+        
+        // Load banner jika ada
+        const bannerContainer = document.getElementById('user-banner');
+        bannerContainer.innerHTML = '';
+        
+        banners.forEach((banner, index) => {
+            const img = document.createElement('img');
+            img.className = 'banner-slide';
+            img.src = banner;
+            img.alt = `Banner ${index + 1}`;
+            if (index === 0) img.classList.add('active');
+            bannerContainer.appendChild(img);
+        });
+        
+        // Mulai slideshow banner
+        startBannerSlideshow();
+        
+        // Cari data customer untuk user ini
+        const customer = customers.find(c => c.nama === currentUser.name);
+        if (!customer) return;
+        
+        // Tampilkan data berdasarkan jenis customer
+        if (customer.jenis === 'Toko') {
+            document.getElementById('pribadi-summary').style.display = 'none';
+            document.querySelector('.user-summary').style.display = 'grid';
+            document.getElementById('tbl-user-deliveries').closest('.table-wrap').style.display = 'block';
+            
+            const userDeliveries = deliveries.filter(d => d.nama === currentUser.name);
+            const userBillings = billings.filter(b => b.nama === currentUser.name);
+            
+            const totalV2 = userDeliveries.reduce((sum, d) => sum + (d.v2 || 0), 0);
+            const totalV5 = userDeliveries.reduce((sum, d) => sum + (d.v5 || 0), 0);
+            
+            const soldV2 = userBillings.reduce((sum, b) => sum + (b.v2Terjual || 0), 0);
+            const soldV5 = userBillings.reduce((sum, b) => sum + (b.v5Terjual || 0), 0);
+            
+            // Update summary
+            document.getElementById('user-v2-total').textContent = totalV2;
+            document.getElementById('user-v5-total').textContent = totalV5;
+            document.getElementById('user-v2-sold').textContent = soldV2;
+            document.getElementById('user-v5-sold').textContent = soldV5;
+            
+            // Update delivery history table
+            const tbody = document.getElementById('tbl-user-deliveries');
+            tbody.innerHTML = '';
+            
+            userDeliveries.sort((a, b) => new Date(b.tgl) - new Date(a.tgl)).forEach(d => {
+                const tr = document.createElement('tr');
+                const isBilled = userBillings.some(b => {
+                    const billingDate = new Date(b.tglPenagihan);
+                    const deliveryDate = new Date(d.tgl);
+                    return billingDate >= deliveryDate;
+                });
+                
+                tr.innerHTML = `
+                    <td>${d.tgl}</td>
+                    <td>${d.v2 || 0}</td>
+                    <td>${d.v5 || 0}</td>
+                    <td>${isBilled ? 'Sudah Ditagih' : 'Belum Ditagih'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else if (customer.jenis === 'Pribadi') {
+            // Sembunyikan bagian vocer untuk user pribadi
+            document.querySelector('.user-summary').style.display = 'none';
+            document.getElementById('pribadi-summary').style.display = 'block';
+            document.getElementById('tbl-user-deliveries').closest('.table-wrap').style.display = 'none';
+            
+            // Tampilkan total tagihan untuk user pribadi
+            document.getElementById('pribadi-tagihan').textContent = fmt(customer.tagihanPribadi || 0);
+        }
+        
+        // Load user messages
+        loadUserMessages();
+    }
+    
+    function sendUserMessage() {
+        const messageText = document.getElementById('user-message').value.trim();
+        if (!messageText) {
+            return alert('Pesan tidak boleh kosong!');
+        }
+        
+        userMessages.push({
+            sender: currentUser.name,
+            message: messageText,
+            date: new Date().toISOString(),
+            read: false
+        });
+        
+        saveDataToLocalStorage();
+        document.getElementById('user-message').value = '';
+        alert('Pesan berhasil dikirim!');
+        loadUserMessages();
+    }
+    
+    function loadUserMessages() {
+        const userMsg = userMessages.filter(m => m.sender === currentUser.name);
+        const messagesList = document.getElementById('user-messages-list');
+        messagesList.innerHTML = '';
+        
+        if (userMsg.length > 0) {
+            document.getElementById('user-message-history').style.display = 'block';
+            
+            userMsg.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-sender">Anda</span>
+                        <span class="message-date">${new Date(msg.date).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <div>${msg.message}</div>
+                `;
+                messagesList.appendChild(messageDiv);
+            });
+        } else {
+            document.getElementById('user-message-history').style.display = 'none';
+        }
+    }
+    
+    /* -------------------------
+       Admin Dashboard
+       ------------------------- */
+    function updateAdminDashboard() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        
+        // Calculate total sales for current month
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const currentMonthBillings = billings.filter(b => {
+            const billingDate = new Date(b.tglPenagihan);
+            return billingDate.getMonth() === currentMonth && billingDate.getFullYear() === currentYear;
+        });
+        
+        const totalSales = currentMonthBillings.reduce((sum, b) => sum + b.totalTagihan, 0);
+        
+        // Calculate total sales for last month
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        const lastMonthBillings = billings.filter(b => {
+            const billingDate = new Date(b.tglPenagihan);
+            return billingDate.getMonth() === lastMonth && billingDate.getFullYear() === lastMonthYear;
+        });
+        
+        const lastMonthSales = lastMonthBillings.reduce((sum, b) => sum + b.totalTagihan, 0);
+        
+        // Calculate sales trend
+        const salesTrend = totalSales - lastMonthSales;
+        const trendElement = document.getElementById('sales-trend');
+        trendElement.textContent = salesTrend >= 0 ? `+${fmt(salesTrend)}` : `${fmt(salesTrend)}`;
+        trendElement.className = salesTrend >= 0 ? 'trend-up' : 'trend-down';
+        
+        // Update stats
+        document.getElementById('total-sales').textContent = fmt(totalSales);
+        document.getElementById('total-customers').textContent = customers.length;
+        document.getElementById('total-messages').textContent = userMessages.filter(m => !m.read).length;
+        
+        // Find top customer
+        const customerSales = {};
+        currentMonthBillings.forEach(b => {
+            if (!customerSales[b.nama]) {
+                customerSales[b.nama] = 0;
+            }
+            customerSales[b.nama] += b.totalTagihan;
+        });
+        
+        let topCustomer = '-';
+        let maxSales = 0;
+        for (const [name, sales] of Object.entries(customerSales)) {
+            if (sales > maxSales) {
+                maxSales = sales;
+                topCustomer = name;
+            }
+        }
+        
+        document.getElementById('top-customer').textContent = topCustomer;
+        
+        // Update customer performance table
+        updateCustomerPerformance();
+        
+        // Update user messages table
+        updateUserMessagesTable();
+    }
+    
+    function updateCustomerPerformance() {
+        const tbody = document.getElementById('tbl-customer-performance');
+        tbody.innerHTML = '';
+        
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        
+        customers.forEach(customer => {
+            if (customer.jenis !== 'Toko') return;
+            
+            const currentMonthBillings = billings.filter(b => {
+                if (b.nama !== customer.nama) return false;
+                const billingDate = new Date(b.tglPenagihan);
+                return billingDate.getMonth() === currentMonth && billingDate.getFullYear() === currentYear;
+            });
+            
+            const lastMonthBillings = billings.filter(b => {
+                if (b.nama !== customer.nama) return false;
+                const billingDate = new Date(b.tglPenagihan);
+                return billingDate.getMonth() === lastMonth && billingDate.getFullYear() === lastMonthYear;
+            });
+            
+            const currentSales = currentMonthBillings.reduce((sum, b) => sum + b.totalTagihan, 0);
+            const lastSales = lastMonthBillings.reduce((sum, b) => sum + b.totalTagihan, 0);
+            
+            const trend = currentSales - lastSales;
+            const trendClass = trend >= 0 ? 'trend-up' : 'trend-down';
+            const trendIcon = trend >= 0 ? '↑' : '↓';
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${customer.nama}</td>
+                <td>${fmt(currentSales)}</td>
+                <td>${fmt(lastSales)}</td>
+                <td class="${trendClass}">${trendIcon} ${fmt(Math.abs(trend))}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function updateUserMessagesTable() {
+        const tbody = document.getElementById('tbl-user-messages');
+        tbody.innerHTML = '';
+        
+        userMessages.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((msg, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${msg.sender}</td>
+                <td>${msg.message}</td>
+                <td>${new Date(msg.date).toLocaleDateString('id-ID')}</td>
+                <td>
+                    <button class="secondary" onclick="markMessageAsRead(${index})">${msg.read ? 'Tandai Belum Dibaca' : 'Tandai Sudah Dibaca'}</button>
+                    <button class="secondary" onclick="deleteMessage(${index})">Hapus</button>
+                </td>
+            `;
+            if (!msg.read) {
+                tr.style.fontWeight = 'bold';
+            }
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function markMessageAsRead(index) {
+        userMessages[index].read = !userMessages[index].read;
+        saveDataToLocalStorage();
+        updateUserMessagesTable();
+        updateAdminDashboard();
+    }
+    
+    function deleteMessage(index) {
+        if (confirm('Hapus pesan ini?')) {
+            userMessages.splice(index, 1);
+            saveDataToLocalStorage();
+            updateUserMessagesTable();
+            updateAdminDashboard();
+        }
+    }
+    
+    function updateBanner() {
+        const url = document.getElementById('banner-url').value.trim();
+        if (!url) {
+            return alert('URL banner tidak boleh kosong!');
+        }
+        
+        // Pastikan URL adalah file JPG
+        if (!url.toLowerCase().endsWith('.jpg') && !url.toLowerCase().endsWith('.jpeg')) {
+            return alert('Hanya file JPG yang didukung!');
+        }
+        
+        banners.push(url);
+        saveDataToLocalStorage();
+        document.getElementById('banner-url').value = '';
+        alert('Banner berhasil ditambahkan!');
+    }
+
+    /* -------------------------
+       Sisanya tetap sama seperti sebelumnya
+       ------------------------- */
+    // ... (kode lainnya tetap sama)
+
+    /* -------------------------
+       misc render & init
+       ------------------------- */
+    function renderAll() {
+        renderUsers();
+        renderCustomers();
+        renderDeliveries();
+        renderReport();
+        updateDropdowns();
+        document.getElementById('peng-tgl').value = today();
+        document.getElementById('billing-dari').value = firstDayOfMonth();
+        document.getElementById('billing-sampai').value = today();
+        document.getElementById('report-dari').value = firstDayOfMonth();
+        document.getElementById('report-sampai').value = today();
+        document.getElementById('nav-bottom').style.display = 'flex';
+    }
+
+    function initDefaults() {
+        document.getElementById('pel-jenis').dispatchEvent(new Event('change'));
+        renderAll();
+        
+        // Show appropriate section based on user role
+        if (currentUser.role === 'admin') {
+            showSection('admin-dashboard');
+        } else {
+            showSection('user-dashboard');
+        }
+    }
+
+    // Initial setup on load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load data from localStorage
+        loadDataFromLocalStorage();
+        
+        // Set default dates
+        const today = new Date().toISOString().slice(0, 10);
+        if (document.getElementById('peng-tgl')) {
+            document.getElementById('peng-tgl').value = today;
+        }
+        
+        // Focus pada input username
+        if (document.getElementById('login-username')) {
+            document.getElementById('login-username').focus();
+        }
+        
+        console.log('Aplikasi siap. Gunakan username: admin, password: admin123 untuk login.');
+    });
+
+</script>
+</body>
+</html>
