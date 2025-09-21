@@ -1,18 +1,56 @@
-{
-  "name": "indiego-backend",
-  "version": "1.0.0",
-  "description": "Backend for Indiego Management System",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^8.0.3",
-    "cors": "^2.8.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+
+// Koneksi ke MongoDB (opsional)
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (MONGODB_URI) {
+  console.log('Mencoba menghubungkan ke MongoDB...');
+  mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ Terhubung ke MongoDB'))
+    .catch(err => console.log('⚠️  Tidak bisa terhubung ke MongoDB:', err.message));
+} else {
+  console.log('⚠️  MONGODB_URI tidak ditemukan, menjalankan tanpa database');
 }
+
+// Route dasar
+app.get('/', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
+  res.json({ 
+    message: 'Indiego.Net Backend API is running!',
+    status: 'OK',
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
+  res.json({ 
+    status: 'OK', 
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Jalankan server
+app.listen(PORT, () => {
+  console.log(`🚀 Server berjalan di port ${PORT}`);
+});
+
+// Error handling
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
