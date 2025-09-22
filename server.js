@@ -1,208 +1,165 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
-const bodyParser = require("body-parser");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
-// ✅ CORS biar bisa diakses dari GitHub Pages
-app.use(
-  cors({
-    origin: "https://ceritesambas11.github.io", // ganti sesuai domain frontend
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// ✅ CORS configuration
+app.use(cors({
+  origin: ["https://ceritesambas11.github.io", "http://localhost:3000"],
+  credentials: true
+}));
 
-// =========================
-// Dummy Database (in-memory)
-// =========================
-let users = [
-  { id: 1, username: "admin", password: "admin123", name: "Admin", role: "admin" },
-  { id: 2, username: "user", password: "user123", name: "User Biasa", role: "user" },
-];
-let customers = [];
-let deliveries = [];
-let messages = [];
+// ✅ Connect to MongoDB
+const MONGODB_URI = "mongodb+srv://indiegonet_db_user:oQ4Jekt4Gh88qRRG@cluster0.8jfzl5g.mongodb.net/indiegoDB?retryWrites=true&w=majority&appName=Cluster0";
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// =========================
-// Auth
-// =========================
-app.post("/api/auth/login", (req, res) => {
-  const { username, password } = req.body;
-  console.log("🔐 Login attempt:", username);
+// ✅ Define Mongoose Schemas
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  name: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'user'], default: 'user' }
+});
 
-  const user = users.find((u) => u.username === username && u.password === password);
-  if (!user) {
-    return res.status(401).json({ success: false, message: "Username atau password salah" });
+const customerSchema = new mongoose.Schema({
+  nama: { type: String, required: true },
+  jenis: { type: String, enum: ['Toko', 'Pribadi'], required: true },
+  persen: { type: Number, default: 0 },
+  tagihanPribadi: { type: Number, default: 0 }
+});
+
+const deliverySchema = new mongoose.Schema({
+  tgl: { type: Date, required: true },
+  nama: { type: String, required: true },
+  v2: { type: Number, default: 0 },
+  v5: { type: Number, default: 0 }
+});
+
+const billingSchema = new mongoose.Schema({
+  tglPenagihan: { type: Date, required: true },
+  nama: { type: String, required: true },
+  jenis: { type: String, enum: ['Toko', 'Pribadi'], required: true },
+  // Fields for Toko
+  dari: Date,
+  sampai: Date,
+  terkirimV2: Number,
+  terkirimV5: Number,
+  sisaV2: Number,
+  sisaV5: Number,
+  v2Terjual: Number,
+  v5Terjual: Number,
+  totalPenjualan: Number,
+  bagianToko: Number,
+  totalTagihan: Number,
+  // Fields for Pribadi
+  tagihanPribadi: Number
+});
+
+const messageSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  message: { type: String, required: true },
+  date: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false }
+});
+
+// ✅ Create Models
+const User = mongoose.model('User', userSchema);
+const Customer = mongoose.model('Customer', customerSchema);
+const Delivery = mongoose.model('Delivery', deliverySchema);
+const Billing = mongoose.model('Billing', billingSchema);
+const Message = mongoose.model('Message', messageSchema);
+
+// ✅ Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Access token required' });
   }
 
-  return res.json({
-    success: true,
-    user: {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      token: "dummy-token-" + user.id,
-    },
+  jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
   });
+};
+
+// =========================
+// Auth Endpoints
+// =========================
+app.post("/api/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    // For now, we're comparing plain text passwords
+    // In production, you should use bcrypt.compare
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username, role: user.role },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role
+      },
+      token
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 // =========================
-// Users CRUD
+// Data Endpoints
 // =========================
-app.get("/api/users", (req, res) => {
-  res.json({ success: true, data: users });
+app.get("/api/customers", authenticateToken, async (req, res) => {
+  try {
+    const customers = await Customer.find();
+    res.json({ success: true, data: customers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
-app.post("/api/users", (req, res) => {
-  const newUser = { id: Date.now(), ...req.body };
-  users.push(newUser);
-  res.json({ success: true, data: newUser });
+app.post("/api/customers", authenticateToken, async (req, res) => {
+  try {
+    const newCustomer = new Customer(req.body);
+    await newCustomer.save();
+    res.json({ success: true, data: newCustomer });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
-app.put("/api/users/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  users = users.map((u) => (u.id === id ? { ...u, ...req.body } : u));
-  res.json({ success: true });
-});
-
-app.delete("/api/users/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  users = users.filter((u) => u.id !== id);
-  res.json({ success: true });
-});
-
-app.get("/api/users/:id/dashboard", (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      v2_total: 100,
-      v5_total: 50,
-      v2_sold: 40,
-      v5_sold: 30,
-      deliveries,
-      customer_type: "Pribadi",
-      pribadi_tagihan: 150000,
-      messages,
-    },
-  });
-});
-
-// =========================
-// Customers CRUD
-// =========================
-app.get("/api/customers", (req, res) => {
-  res.json({ success: true, data: customers });
-});
-
-app.post("/api/customers", (req, res) => {
-  const newCustomer = { id: Date.now(), ...req.body };
-  customers.push(newCustomer);
-  res.json({ success: true, data: newCustomer });
-});
-
-app.put("/api/customers/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  customers = customers.map((c) => (c.id === id ? { ...c, ...req.body } : c));
-  res.json({ success: true });
-});
-
-app.delete("/api/customers/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  customers = customers.filter((c) => c.id !== id);
-  res.json({ success: true });
-});
-
-// =========================
-// Deliveries CRUD
-// =========================
-app.get("/api/deliveries", (req, res) => {
-  res.json({ success: true, data: deliveries });
-});
-
-app.post("/api/deliveries", (req, res) => {
-  const newDelivery = { id: Date.now(), ...req.body };
-  deliveries.push(newDelivery);
-  res.json({ success: true, data: newDelivery });
-});
-
-app.delete("/api/deliveries/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  deliveries = deliveries.filter((d) => d.id !== id);
-  res.json({ success: true });
-});
-
-app.post("/api/deliveries/clear", (req, res) => {
-  deliveries = [];
-  res.json({ success: true });
-});
-
-app.get("/api/deliveries/summary", (req, res) => {
-  res.json({
-    success: true,
-    data: { v2_total: 10, v5_total: 5 },
-  });
-});
-
-// =========================
-// Messages
-// =========================
-app.post("/api/messages", (req, res) => {
-  const newMsg = { id: Date.now(), sender_name: "Anonim", date: new Date(), message_text: req.body.message };
-  messages.push(newMsg);
-  res.json({ success: true, data: newMsg });
-});
-
-app.get("/api/messages", (req, res) => {
-  res.json({ success: true, data: messages });
-});
-
-app.delete("/api/messages/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  messages = messages.filter((m) => m.id !== id);
-  res.json({ success: true });
-});
-
-// =========================
-// Admin Dashboard
-// =========================
-app.get("/api/admin/dashboard", (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      total_sales: 500000,
-      total_customers: customers.length,
-      total_messages: messages.length,
-      top_customer: customers.length ? customers[0].name : "-",
-      sales_trend: 1,
-      sales_trend_text: "Naik",
-      customer_performance: customers.map((c) => ({
-        name: c.name,
-        current_month: 10,
-        last_month: 8,
-        trend_text: "Naik",
-        trend_class: "trend-up",
-      })),
-      messages,
-    },
-  });
-});
-
-// =========================
-// Banner
-// =========================
-app.post("/api/banner", (req, res) => {
-  console.log("📢 Banner update:", req.body.url);
-  res.json({ success: true });
-});
+// Implement similar endpoints for other models (users, deliveries, billings, messages)
 
 // =========================
 // Start Server
 // =========================
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server berjalan di port ${PORT}`);
-  console.log(`📡 API Base URL: https://indiegonet-management.onrender.com`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
