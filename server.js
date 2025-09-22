@@ -163,3 +163,19 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+// ✅ Basic root endpoint
+app.get("/", (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "IndiegoNet Management API", 
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/login",
+      customers: "/api/customers",
+      users: "/api/users",
+      deliveries: "/api/deliveries",
+      messages: "/api/messages"
+    }
+  });
+});
+
